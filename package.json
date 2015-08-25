@@ -1,0 +1,36 @@
+{
+  "name": "folder-to-rdf",
+  "version": "0.1.0",
+  "description": "Get an RDF graph of the contents of a folder",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicola/folder-to-rdf.git"
+  },
+  "keywords": [
+    "linked",
+    "data",
+    "rdf",
+    "ldp"
+  ],
+  "author": "Nicola Greco <me@nicola.io> (http://nicolagreco.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nicola/folder-to-rdf/issues"
+  },
+  "homepage": "https://github.com/nicola/folder-to-rdf",
+  "dependencies": {
+    "async": "^1.4.2",
+    "mimetype": "0.0.7",
+    "minimatch": "^2.0.10",
+    "rdf-ext": "^0.2.6",
+    "string": "^3.3.1"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "mocha": "^2.2.5"
+  }
+}
