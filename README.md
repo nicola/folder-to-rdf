@@ -7,7 +7,7 @@ Like `ls`, with `Linked Data output`
 ## Install
 
 ```
-$ npm install --save linkeddata-ls
+$ npm install --save folder-to-rdf
 ```
 
 ## Usage
