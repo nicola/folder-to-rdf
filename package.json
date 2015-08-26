@@ -24,6 +24,7 @@
   "homepage": "https://github.com/nicola/folder-to-rdf",
   "dependencies": {
     "async": "^1.4.2",
+    "debug": "^2.2.0",
     "mimetype": "0.0.7",
     "minimatch": "^2.0.10",
     "rdf-ext": "^0.2.6",

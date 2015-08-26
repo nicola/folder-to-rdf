@@ -4,7 +4,8 @@ var string = require('string');
 var path = require('path');
 var rdf = require('rdf-ext')();
 var mimetype = require('mimetype');
-var minimatch = require('minimatch');
+var debug = require('debug')('folder-to-rdf');
+var skipFilesFilter = require('./lib/skip-files-filter');
 
 function list (options) {
   var folder = new ListFolder(options);
@@ -13,11 +14,19 @@ function list (options) {
 
 function ListFolder (options) {
   var self = this;
+
   self.suffixMeta = options.suffixMeta;
+  self.suffixAcl = options.suffixAcl;
   self.skipFiles = options.skipFiles || [];
+
+  // Skip ACL and Meta files
   if (self.suffixMeta) {
     self.skipFiles.push(self.suffixMeta);
     self.skipFiles.push('*' + self.suffixMeta);
+  }
+  if (self.suffixAcl) {
+    self.skipFiles.push(self.suffixAcl);
+    self.skipFiles.push('*' + self.suffixAcl);
   }
 
   // TODO this shall become rdf.parse
@@ -33,7 +42,11 @@ function ListFolder (options) {
 
 ListFolder.prototype.list = function (folder, callback, options) {
   var self = this;
-  console.log(this)
+
+  if (folder[folder.length - 1] !== '/') {
+    folder += '/';
+  }
+
   options = options || {};
   var skipFiles = options.skipFiles || self.skipFiles || [];
   var graph = rdf.createGraph();
@@ -69,36 +82,24 @@ ListFolder.prototype.list = function (folder, callback, options) {
 
     fs.readdir(folder, function (err, files) {
       if (err) callback(err);
-      console.log(skipFiles)
-      if (skipFiles.length) {
-        files = files
-          .filter(function (file) {
-            return !skipFiles
-              .some(function (pattern) {
-                console.log(file, pattern, !minimatch(path.join(folder, file), pattern))
-                return minimatch(file, pattern, {matchBas: true});
-              });
-          });
-      }
-      console.log(files)
+      files = skipFilesFilter(skipFiles, files);
+
+      debug('Files found: ', files);
 
       async.map(
         files,
         function (file, next) {
-                console.log(file)
           var mime = mimetype.lookup(file) || self.defaultParser;
-          console.log(mime, self.defaultParser)
           var parser = self.parsers[mime];
-          self.fileGraph(parser, folder + '/' + file, next, options);
+          self.fileGraph(parser, path.join(folder, file), next, options);
         },
         function (err, fileGraphs) {
-          console.log('done2', err)
           if (err) return callback(err);
-          console.log('done2', fileGraphs.length)
+
           fileGraphs.forEach(function (fileGraph) {
             graph.addAll(fileGraph);
           });
-          console.log('done', graph.length)
+
           callback(null, graph);
         });
     });
@@ -110,7 +111,6 @@ function getFileGraph (parser, iri, file, callback) {
     if (err) return callback(err);
 
     parser(data.toString(), function (graph, err) {
-      console.log('pasrese', err)
       if (err) return callback(err);
       callback(err, graph);
     }, iri);
@@ -118,7 +118,6 @@ function getFileGraph (parser, iri, file, callback) {
 }
 
 ListFolder.prototype.fileGraph = function (parser, filePath, callback, options) {
-console.log(filePath)
   options = options || {};
   var self = this;
   var file = path.basename(filePath);
@@ -130,7 +129,7 @@ console.log(filePath)
     if (err) return callback(err);
 
     file += (stats.isDirectory() ? '/' : '');
-    console.log('bebe', file)
+
     graph.add(rdf.Triple(
       rdf.NamedNode(file),
       rdf.NamedNode('http://www.w3.org/ns/posix/stat#mtime'),
@@ -159,7 +158,6 @@ console.log(filePath)
     }
 
     getFileGraph(parser, file, filePath + metadataFile, function (err, metadata) {
-      console.log('ha', err)
       if (err || !metadata) metadata = rdf.createGraph();
 
       // Add File, Container or BasicContainer
@@ -186,7 +184,7 @@ console.log(filePath)
       }
 
       // Infer type
-      console.log(metadata.toArray())
+
       metadata
         .match(
           file,
@@ -196,13 +194,11 @@ console.log(filePath)
           // If the current is a file and its type is BasicContainer,
           // This is not possible, so do not infer its type!
           if (
-            
               (
-                typeStatement.object.uri !== 'http://www.w3.org/ns/ldp#BasicContainer' &&
-                typeStatement.object.uri !== 'http://www.w3.org/ns/ldp#Container'
+                typeStatement.object.valueOf() !== 'http://www.w3.org/ns/ldp#BasicContainer' &&
+                typeStatement.object.valueOf() !== 'http://www.w3.org/ns/ldp#Container'
               ) ||
               !stats.isFile()
-            
           ) {
             graph.add(rdf.Triple(
               rdf.NamedNode(file),
