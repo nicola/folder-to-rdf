@@ -146,4 +146,24 @@ describe('listContainer', function () {
       });
     });
   });
+
+  it('should not skip any file no skipFiles or suffices are passed', function (done) {
+    var listFolderObjectNoSkip = new ListFolder();
+    listFolderObjectNoSkip.list(__dirname + '/resources/', function (err, graph) {
+      if (err) return done(err);
+      fs.readdir(__dirname + '/resources', function (err, files) {
+
+        var statements = graph
+          .match(
+            undefined,
+            'http://www.w3.org/ns/ldp#contains',
+            undefined)
+          .toArray();
+
+        assert.equal(statements.length, files.length);
+        assert.notOk(err);
+        done();
+      });
+    });
+  });
 });

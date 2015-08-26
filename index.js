@@ -3,7 +3,8 @@ var async = require('async');
 var string = require('string');
 var path = require('path');
 var rdf = require('rdf-ext')();
-var mimetype = require('mimetype');
+var mime = require('mime');
+mime.default_type = null;
 var debug = require('debug')('folder-to-rdf');
 var skipFilesFilter = require('./lib/skip-files-filter');
 
@@ -14,7 +15,7 @@ function list (options) {
 
 function ListFolder (options) {
   var self = this;
-
+  options = options || {};
   self.suffixMeta = options.suffixMeta;
   self.suffixAcl = options.suffixAcl;
   self.skipFiles = options.skipFiles || [];
@@ -89,9 +90,7 @@ ListFolder.prototype.list = function (folder, callback, options) {
       async.map(
         files,
         function (file, next) {
-          var mime = mimetype.lookup(file) || self.defaultParser;
-          var parser = self.parsers[mime];
-          self.fileGraph(parser, path.join(folder, file), next, options);
+          self.fileGraph(path.join(folder, file), next, options);
         },
         function (err, fileGraphs) {
           if (err) return callback(err);
@@ -117,10 +116,9 @@ function getFileGraph (parser, iri, file, callback) {
   });
 }
 
-ListFolder.prototype.fileGraph = function (parser, filePath, callback, options) {
+ListFolder.prototype.fileGraph = function (filePath, callback, options) {
   options = options || {};
   var self = this;
-  var file = path.basename(filePath);
   var graph = rdf.createGraph();
 
   // Get file stats
@@ -128,7 +126,8 @@ ListFolder.prototype.fileGraph = function (parser, filePath, callback, options) 
     // File does not exist, skip
     if (err) return callback(err);
 
-    file += (stats.isDirectory() ? '/' : '');
+    filePath += (stats.isDirectory() ? '/' : '');
+    var file = path.basename(filePath);
 
     graph.add(rdf.Triple(
       rdf.NamedNode(file),
@@ -146,38 +145,44 @@ ListFolder.prototype.fileGraph = function (parser, filePath, callback, options) 
       rdf.NamedNode('http://www.w3.org/ns/ldp#contains'),
       rdf.NamedNode(file)));
 
-    // Set up a meta path
-    var metadataFile =
-      (string(file).endsWith('.ttl') ? '' : (options.suffixMeta || self.suffixMeta));
+    // Set up a metaPath
+    var metadataPath = filePath
+    var fileMIME = mime.lookup(file)
+    if (!(fileMIME && fileMIME in self.defaultParsers)) {
+      metadataPath += options.suffixMeta || self.suffixMeta || ''
+    }
 
     // This is the case in which the file is a folder and suffixMeta is null
     // then, keep going
-
-    if (metadataFile[metadataFile.length - 1] === '/') {
+    if (metadataPath[metadataPath.length - 1] === '/') {
       return callback(null, graph);
     }
 
-    getFileGraph(parser, file, filePath + metadataFile, function (err, metadata) {
+    // Get MIME and select according parser
+    var mimetype = mime.lookup(metadataPath) || self.defaultParser;
+    var parser = self.parsers[mimetype];
+
+    getFileGraph(parser, file, metadataPath, function (err, metadata) {
       if (err || !metadata) metadata = rdf.createGraph();
 
       // Add File, Container or BasicContainer
       if (stats.isDirectory()) {
-       graph.add(rdf.Triple(
+        graph.add(rdf.Triple(
           rdf.NamedNode(file),
           rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           rdf.NamedNode('http://www.w3.org/ns/ldp#BasicContainer')));
 
-       graph.add(rdf.Triple(
+        graph.add(rdf.Triple(
           rdf.NamedNode(file),
           rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           rdf.NamedNode('http://www.w3.org/ns/ldp#Container')));
 
-       graph.add(rdf.Triple(
+        graph.add(rdf.Triple(
           rdf.NamedNode(file),
           rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')));
       } else {
-       graph.add(rdf.Triple(
+        graph.add(rdf.Triple(
           rdf.NamedNode(file),
           rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           rdf.NamedNode('http://www.w3.org/ns/posix/stat#File')));
