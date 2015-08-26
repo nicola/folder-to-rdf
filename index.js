@@ -162,6 +162,8 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
     var mimetype = mime.lookup(metadataPath) || self.defaultParser;
     var parser = self.parsers[mimetype];
 
+    if (!parser) return callback(null, graph)
+
     getFileGraph(parser, file, metadataPath, function (err, metadata) {
       if (err || !metadata) metadata = rdf.createGraph();
 

@@ -51,6 +51,27 @@ describe('listContainer', function () {
     });
   });
 
+  it('should not open documents it can\'t parse', function (done) {
+    write('test', 'magicType.css');
+
+    listFolderFunction(__dirname + '/resources', function (err, graph) {
+      if (err) return done(err);
+
+      var statements = graph
+        .match(
+          'magicType.css',
+          'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+          undefined)
+        .toArray();
+
+      assert.equal(statements.length, 1);
+      assert.equal(statements[0].object.toString(), 'http://www.w3.org/ns/posix/stat#File');
+
+      rm('magicType.css');
+      done();
+    });
+  });
+
   it('should not inherit type of BasicContainer/Container if type is File', function(done) {
     write('@prefix dcterms: <http://purl.org/dc/terms/>.' +
           '@prefix o: <http://example.org/ontology>.' +
@@ -166,4 +187,6 @@ describe('listContainer', function () {
       });
     });
   });
+
+
 });
