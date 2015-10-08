@@ -17,8 +17,8 @@ $ npm install --save folder-to-rdf
 ```javascript
 var opts = {
   suffixMeta: '.meta',
-  suffixAcl: '.acl',
-  skipFiles: ['secret*', '.git', '*.pem']
+  skipFiles: ['secret*', '.git', '*.pem'],
+  posix: true
 }
 var ls = require('folder-to-rdf')(opts)
 
