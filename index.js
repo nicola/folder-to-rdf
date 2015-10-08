@@ -8,7 +8,7 @@ mime.default_type = null;
 var debug = require('debug')('folder-to-rdf');
 var skipFilesFilter = require('./lib/skip-files-filter');
 
-function list (options) {
+function ls (options) {
   var folder = new ListFolder(options);
   return folder.list.bind(folder);
 }
@@ -16,18 +16,12 @@ function list (options) {
 function ListFolder (options) {
   var self = this;
   options = options || {};
-  self.suffixMeta = options.suffixMeta;
-  self.suffixAcl = options.suffixAcl;
   self.skipFiles = options.skipFiles || [];
 
-  // Skip ACL and Meta files
+  // Skip Meta files
   if (self.suffixMeta) {
     self.skipFiles.push(self.suffixMeta);
     self.skipFiles.push('*' + self.suffixMeta);
-  }
-  if (self.suffixAcl) {
-    self.skipFiles.push(self.suffixAcl);
-    self.skipFiles.push('*' + self.suffixAcl);
   }
 
   // TODO this shall become rdf.parse
@@ -219,5 +213,5 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
   });
 };
 
-module.exports = list;
+module.exports = ls;
 module.exports.ListFolder = ListFolder;
