@@ -17,6 +17,7 @@ function ListFolder (options) {
   var self = this;
   options = options || {};
   self.skipFiles = options.skipFiles || [];
+  self.posix = options.posix;
 
   // Skip Meta files
   if (self.suffixMeta) {
@@ -70,10 +71,11 @@ ListFolder.prototype.list = function (folder, callback, options) {
       rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
       rdf.NamedNode('http://www.w3.org/ns/ldp#Container')));
 
-    graph.add(rdf.Triple(
-      rdf.NamedNode(''),
-      rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')));
+    if (self.posix)
+      graph.add(rdf.Triple(
+        rdf.NamedNode(''),
+        rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')));
 
     fs.readdir(folder, function (err, files) {
       if (err) callback(err);
@@ -173,11 +175,13 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
           rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           rdf.NamedNode('http://www.w3.org/ns/ldp#Container')));
 
-        graph.add(rdf.Triple(
-          rdf.NamedNode(file),
-          rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')));
-      } else {
+        if (self.posix) {
+          graph.add(rdf.Triple(
+            rdf.NamedNode(file),
+            rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')));
+        }
+      } else if (self.posix) {
         graph.add(rdf.Triple(
           rdf.NamedNode(file),
           rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
