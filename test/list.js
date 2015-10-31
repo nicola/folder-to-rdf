@@ -1,5 +1,5 @@
 var fs = require('fs')
-var rdf = require('rdf-ext')()
+var rdf = require('rdf-ext')
 var assert = require('chai').assert
 
 describe('listContainer', function () {
