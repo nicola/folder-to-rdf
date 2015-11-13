@@ -4,7 +4,7 @@ module.exports.ListFolder = ListFolder
 var fs = require('fs')
 var async = require('async')
 var path = require('path')
-var rdf = require('rdf-ext')()
+var rdf = require('rdf-ext')
 var mime = require('mime')
 mime.default_type = null
 var debug = require('debug')('folder-to-rdf')
@@ -54,31 +54,31 @@ ListFolder.prototype.list = function (folder, callback, options) {
     if (err) return callback(err)
     if (!stats.isDirectory()) return callback(new Error('Not a directory'))
 
-    graph.add(rdf.Triple(
-      rdf.NamedNode(''),
-      rdf.NamedNode('http://www.w3.org/ns/posix/stat#mtime'),
-      rdf.Literal(stats.mtime.getTime() / 1000)))
+    graph.add(rdf.createTriple(
+      rdf.createNamedNode(''),
+      rdf.createNamedNode('http://www.w3.org/ns/posix/stat#mtime'),
+      rdf.createLiteral(stats.mtime.getTime() / 1000)))
 
-    graph.add(rdf.Triple(
-      rdf.NamedNode(''),
-      rdf.NamedNode('http://www.w3.org/ns/posix/stat#size'),
-      rdf.Literal(stats.size)))
+    graph.add(rdf.createTriple(
+      rdf.createNamedNode(''),
+      rdf.createNamedNode('http://www.w3.org/ns/posix/stat#size'),
+      rdf.createLiteral(stats.size)))
 
-    graph.add(rdf.Triple(
-        rdf.NamedNode(''),
-        rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        rdf.NamedNode('http://www.w3.org/ns/ldp#BasicContainer')))
+    graph.add(rdf.createTriple(
+        rdf.createNamedNode(''),
+        rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        rdf.createNamedNode('http://www.w3.org/ns/ldp#BasicContainer')))
 
-    graph.add(rdf.Triple(
-      rdf.NamedNode(''),
-      rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      rdf.NamedNode('http://www.w3.org/ns/ldp#Container')))
+    graph.add(rdf.createTriple(
+      rdf.createNamedNode(''),
+      rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      rdf.createNamedNode('http://www.w3.org/ns/ldp#Container')))
 
     if (self.posix) {
-      graph.add(rdf.Triple(
-        rdf.NamedNode(''),
-        rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')))
+      graph.add(rdf.createTriple(
+        rdf.createNamedNode(''),
+        rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        rdf.createNamedNode('http://www.w3.org/ns/posix/stat#Directory')))
     }
 
     fs.readdir(folder, function (err, files) {
@@ -129,21 +129,21 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
     filePath += (stats.isDirectory() ? '/' : '')
     var file = path.basename(filePath)
 
-    graph.add(rdf.Triple(
-      rdf.NamedNode(file),
-      rdf.NamedNode('http://www.w3.org/ns/posix/stat#mtime'),
-      rdf.Literal(stats.mtime.getTime() / 1000)))
+    graph.add(rdf.createTriple(
+      rdf.createNamedNode(file),
+      rdf.createNamedNode('http://www.w3.org/ns/posix/stat#mtime'),
+      rdf.createLiteral(stats.mtime.getTime() / 1000)))
 
-    graph.add(rdf.Triple(
-      rdf.NamedNode(file),
-      rdf.NamedNode('http://www.w3.org/ns/posix/stat#size'),
-      rdf.Literal(stats.size)))
+    graph.add(rdf.createTriple(
+      rdf.createNamedNode(file),
+      rdf.createNamedNode('http://www.w3.org/ns/posix/stat#size'),
+      rdf.createLiteral(stats.size)))
 
     // Add to `contains` list
-    graph.add(rdf.Triple(
-      rdf.NamedNode(''),
-      rdf.NamedNode('http://www.w3.org/ns/ldp#contains'),
-      rdf.NamedNode(file)))
+    graph.add(rdf.createTriple(
+      rdf.createNamedNode(''),
+      rdf.createNamedNode('http://www.w3.org/ns/ldp#contains'),
+      rdf.createNamedNode(file)))
 
     // Set up a metaPath
     var metadataPath = filePath
