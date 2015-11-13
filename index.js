@@ -9,6 +9,7 @@ var mime = require('mime')
 mime.default_type = null
 var debug = require('debug')('folder-to-rdf')
 var skipFilesFilter = require('./lib/skip-files-filter')
+var parsers = require('rdf-mime-type-util').parsers
 
 function list (options) {
   var folder = new ListFolder(options)
@@ -30,13 +31,7 @@ function ListFolder (options) {
 
   // TODO this shall become rdf.parse
   self.defaultParser = options.defaultParser || 'text/turtle'
-  self.defaultParsers = {
-    'application/ld+json': rdf.parseJsonLd,
-    'application/n-triples': rdf.parseTurtle,
-    'text/turtle': rdf.parseTurtle
-  }
-
-  self.parsers = options.parsers || self.defaultParsers
+  self.parsers = options.parsers || parsers
 }
 
 ListFolder.prototype.list = function (folder, callback, options) {
@@ -108,8 +103,7 @@ ListFolder.prototype.list = function (folder, callback, options) {
 function getFileGraph (parser, iri, file, callback) {
   fs.readFile(file, 'utf8', function (err, data) {
     if (err) return callback(err)
-
-    parser(data.toString(), function (graph, err) {
+    parser.parse(data.toString(), function (err, graph) {
       if (err) return callback(err)
       callback(err, graph)
     }, iri)
@@ -148,7 +142,7 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
     // Set up a metaPath
     var metadataPath = filePath
     var fileMIME = mime.lookup(file)
-    if (!(fileMIME && fileMIME in self.defaultParsers)) {
+    if (!(fileMIME && fileMIME in self.parsers)) {
       metadataPath += options.suffixMeta || self.suffixMeta || ''
     }
 
@@ -158,45 +152,46 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
       return callback(null, graph)
     }
 
+
+
     // Get MIME and select according parser
     var mimetype = mime.lookup(metadataPath) || self.defaultParser
     var parser = self.parsers[mimetype]
-
     if (!parser) return callback(null, graph)
 
     getFileGraph(parser, file, metadataPath, function (err, metadata) {
+
       if (err || !metadata) metadata = rdf.createGraph()
 
       // Add File, Container or BasicContainer
       if (stats.isDirectory()) {
-        graph.add(rdf.Triple(
-          rdf.NamedNode(file),
-          rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          rdf.NamedNode('http://www.w3.org/ns/ldp#BasicContainer')))
+        graph.add(rdf.createTriple(
+          rdf.createNamedNode(file),
+          rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          rdf.createNamedNode('http://www.w3.org/ns/ldp#BasicContainer')))
 
-        graph.add(rdf.Triple(
-          rdf.NamedNode(file),
-          rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          rdf.NamedNode('http://www.w3.org/ns/ldp#Container')))
+        graph.add(rdf.createTriple(
+          rdf.createNamedNode(file),
+          rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          rdf.createNamedNode('http://www.w3.org/ns/ldp#Container')))
       }
 
       // Posix
       if (self.posix) {
         if (stats.isDirectory()) {
-          graph.add(rdf.Triple(
-            rdf.NamedNode(file),
-            rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-            rdf.NamedNode('http://www.w3.org/ns/posix/stat#Directory')))
+          graph.add(rdf.createTriple(
+            rdf.createNamedNode(file),
+            rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            rdf.createNamedNode('http://www.w3.org/ns/posix/stat#Directory')))
         } else {
-          graph.add(rdf.Triple(
-            rdf.NamedNode(file),
-            rdf.NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-            rdf.NamedNode('http://www.w3.org/ns/posix/stat#File')))
+          graph.add(rdf.createTriple(
+            rdf.createNamedNode(file),
+            rdf.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            rdf.createNamedNode('http://www.w3.org/ns/posix/stat#File')))
         }
       }
 
       // Infer type
-
       metadata
         .match(
           file,
@@ -212,8 +207,8 @@ ListFolder.prototype.fileGraph = function (filePath, callback, options) {
               ) ||
               !stats.isFile()
           ) {
-            graph.add(rdf.Triple(
-              rdf.NamedNode(file),
+            graph.add(rdf.createTriple(
+              rdf.createNamedNode(file),
               typeStatement.predicate,
               typeStatement.object))
           }

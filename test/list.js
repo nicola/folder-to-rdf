@@ -27,20 +27,22 @@ describe('listContainer', function () {
   }
 
   it('should inherit type if file is .ttl', function (done) {
-    write('@prefix dcterms: <http://purl.org/dc/terms/>.' +
-          '@prefix o: <http://example.org/ontology>.' +
-          '<> a <http://www.w3.org/ns/ldp#MagicType> ;' +
-          '   dcterms:title "This is a magic type" ;' +
-          '   o:limit 500000.00 .', 'magicType.ttl')
+    write('@prefix dcterms: <http://purl.org/dc/terms/>.\n' +
+          '@prefix o: <http://example.org/ontology>.\n' +
+          '<> a <http://www.w3.org/ns/ldp#MagicType> ;\n' +
+          '   dcterms:title "This is a magic type" ;\n' +
+          '   o:limit 500000.00 .\n', 'magicType.ttl')
 
     listFolderFunction(__dirname + '/resources', function (err, graph) {
       if (err) return done(err)
 
-      var statements = graph
+      var statementsGraph = graph
         .match(
           'magicType.ttl',
           'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
           undefined)
+
+      var statements = statementsGraph
         .toArray()
 
       assert.equal(statements.length, 2)
