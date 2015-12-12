@@ -27,8 +27,8 @@
     "debug": "^2.2.0",
     "mime": "^1.3.4",
     "minimatch": "^2.0.10",
-    "rdf-ext": "^0.3.0-rc1",
-    "rdf-mime-type-util": "^0.3.0-rc1",
+    "rdf-ext": "^0.3.0-rc4",
+    "rdf-formats-common": "^0.3.0-rc4",
     "string": "^3.3.1"
   },
   "devDependencies": {
