@@ -11,7 +11,7 @@ var debug = require('debug')('folder-to-rdf')
 var skipFilesFilter = require('./lib/skip-files-filter')
 var parsers = rdf.parsers
 
-require('rdf-formats-common')
+require('rdf-formats-common')(rdf)
 
 function list (options) {
   var folder = new ListFolder(options)
