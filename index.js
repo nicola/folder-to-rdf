@@ -9,7 +9,9 @@ var mime = require('mime')
 mime.default_type = null
 var debug = require('debug')('folder-to-rdf')
 var skipFilesFilter = require('./lib/skip-files-filter')
-var parsers = require('rdf-mime-type-util').parsers
+var parsers = rdf.parsers
+
+require('rdf-formats-common')(rdf)
 
 function list (options) {
   var folder = new ListFolder(options)
